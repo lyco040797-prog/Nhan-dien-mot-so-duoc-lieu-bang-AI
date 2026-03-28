@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Nhận Diện Dược Liệu</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f9; padding: 20px; }
+        h1 { color: #2e7d32; }
+        #webcam-container { margin: 20px auto; border: 5px solid #2e7d32; border-radius: 10px; display: inline-block; overflow: hidden; }
+        #label-container { margin-top: 20px; font-size: 1.2rem; font-weight: bold; color: #333; }
+        button { padding: 15px 30px; font-size: 1.2rem; cursor: pointer; background-color: #2e7d32; color: white; border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:hover { background-color: #1b5e20; }
+    </style>
+</head>
+<body>
+    <h1>Hệ thống nhận diện Dược liệu (AI)</h1>
+    <p>Trường THPT Cao Lộc - Lạng Sơn</p>
+    <button type="button" onclick="init()">BẮT ĐẦU NHẬN DIỆN</button>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+        // Link bộ não AI của bạn
+        const URL = "https://teachablemachine.withgoogle.com/models/QvwXuJkVZ/";
+
+        let model, webcam, labelContainer, maxPredictions;
+
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            // Cấu hình bắt buộc dùng Camera sau cho học sinh
+            const flip = false;
+            webcam = new tmImage.Webcam(300, 300, flip); 
+            await webcam.setup({ facingMode: "environment" }); 
+            
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
+
+        async function loop() {
+            webcam.update();
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction =
+                    prediction[i].className + ": " + (prediction[i].probability * 100).toFixed(0) + "%";
+                labelContainer.childNodes[i].innerHTML = classPrediction;
+            }
+        }
+    </script>
+</body>
+</html>
